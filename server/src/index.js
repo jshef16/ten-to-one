@@ -65,6 +65,22 @@ app.post("/login", async (req, res) => {
     }
 });
 
+app.post('/join-game', async (req, res) => {
+    const { username, channelId } = req.body;
+  
+    try {
+      // Fetch the channel from the StreamChat API
+      const channel = serverClient.channel('messaging', channelId);
+  
+      // Add the user to the channel
+      await channel.addMembers([username]);
+  
+      return res.status(200).json({ message: `User ${username} added to channel ${channelId}` });
+    } catch (error) {
+      return res.status(400).json({ message: `Error adding user to channel: ${error.message}` });
+    }
+  });
+
 app.listen(3001, () => {
   console.log("Server is running on port 3001")
 });
