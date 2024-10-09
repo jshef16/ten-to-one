@@ -1,7 +1,7 @@
 import './App.css';
 import SignUp from './components/SignUp.js';
 import Login from "./components/Login.js"
-import JoinGame from "./components/JoinGame.js"
+import Game from "./components/Game.js"
 import JoinOrCreateGame from './components/JoinOrCreateGame.js';
 import {StreamChat} from "stream-chat"
 import {Chat} from "stream-chat-react"
