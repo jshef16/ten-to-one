@@ -1,5 +1,10 @@
 react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
-JoinOrCreateGame.js:68 Channel members at game start: Object
-JoinOrCreateGame.js:93 Received 'game-started' event: Game has started!
-JoinOrCreateGame.js:112 Channel being passed to Game: Channel
-JoinOrCreateGame.js:74 Successfully sent the start message: Object
+Hand.js:19 Channel members at game start: Object
+JoinOrCreateGame.js:16 Received 'game-started' event: Game has started!
+JoinOrCreateGame.js:35 Channel being passed to Game: Channel
+Hand.js:19 Successfully sent the start message: Object
+Game.js:141 Current player index: 0 Current player ID: 660d69f1-6c6d-4adf-ae69-7f5d1963ca28
+Game.js:76 useEffect triggered - gameStarted, players, deckId: Object
+Game.js:90 Setting players: Array(1)
+Game.js:141 Current player index: 0 Current player ID: 660d69f1-6c6d-4adf-ae69-7f5d1963ca28
+Game.js:76 useEffect triggered - gameStarted, players, deckId: Object
