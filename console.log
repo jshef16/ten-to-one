@@ -1,0 +1,5 @@
+react-dom.development.js:29895 Download the React DevTools for a better development experience: https://reactjs.org/link/react-devtools
+JoinOrCreateGame.js:68 Channel members at game start: Object
+JoinOrCreateGame.js:93 Received 'game-started' event: Game has started!
+JoinOrCreateGame.js:112 Channel being passed to Game: Channel
+JoinOrCreateGame.js:74 Successfully sent the start message: Object

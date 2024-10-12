@@ -1,0 +1,11 @@
+.boardWithTrump {
+    display: flex;
+    justify-content: space-between; /* Ensures trump card is placed next to the board */
+    align-items: center;
+  }
+  
+  .trumpCard {
+    margin-left: 20px;
+    text-align: center;
+  }
+  

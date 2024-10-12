@@ -1,65 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { StreamChat } from 'stream-chat';
 import Cookies from 'universal-cookie';
-import Game from './Game.js'
+import Game from './Game.js';
 
 const cookies = new Cookies();
 const client = StreamChat.getInstance(process.env.REACT_APP_STREAM_API_KEY);
 
 function JoinOrCreateGame() {
-  const [mode, setMode] = useState(''); // 'create' or 'join'
+  const [mode, setMode] = useState('');
   const [channelId, setChannelId] = useState('');
-  const [usernames, setUsernames] = useState([]); // Dynamically updated with users in the channel
-  const [channel, setChannel] = useState(null); // To store the current game channel
-  const [gameStarted, setGameStarted] = useState(false); // To toggle between Join/Create and Game component
+  const [usernames, setUsernames] = useState([]);
+  const [channel, setChannel] = useState(null);
+  const [gameStarted, setGameStarted] = useState(false);
 
-  // Function to create a unique game ID
   const generateUniqueId = () => {
     return `game-${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  // Function to create a game (create a new channel)
   const createGame = async () => {
-    const newChannelId = generateUniqueId(); // Generate unique game ID
+    const newChannelId = generateUniqueId();
     const newChannel = client.channel('messaging', newChannelId, {
       name: `Game Room ${newChannelId}`,
       members: [cookies.get('userId')],
     });
     
     await newChannel.create();
-    await newChannel.watch(); // Ensure the creator is watching the channel
+    await newChannel.watch();
 
-    setChannel(newChannel); // Store the channel
-    setChannelId(newChannelId); // Set the channel ID so others can join
-
-    // Fetch and update the list of members in the channel
+    setChannel(newChannel);
+    setChannelId(newChannelId);
     updateUsernames(newChannel);
   };
 
-  // Function to join an existing game by channel ID
   const joinGame = async () => {
     try {
-      // Send request to the server to add the current user to the channel
       const response = await fetch('http://localhost:3001/join-game', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username: cookies.get('userId'), // Current user's username
-          channelId: channelId,              // The channel ID entered by the user
+          username: cookies.get('userId'),
+          channelId: channelId,
         }),
       });
-
+  
       const data = await response.json();
-      
+  
       if (response.ok) {
-        // If the user is successfully added, start watching the channel
         const existingChannel = client.channel('messaging', channelId);
         await existingChannel.watch();
-        setChannel(existingChannel);  // Set the channel in local state
-
-        // Fetch and update the list of members in the channel
+        console.log("Joined client is now watching the channel:", existingChannel);
+  
+        setChannel(existingChannel);
         updateUsernames(existingChannel);
       } else {
         alert(data.message);
@@ -69,37 +62,57 @@ function JoinOrCreateGame() {
       alert('Failed to join the game');
     }
   };
-
-  // Function to fetch and update usernames from the channel members
-  const updateUsernames = async (channel) => {
-    const members = Object.values(channel.state.members);
-    const usernamesInChannel = members.map(member => member.user.name || member.user.id); // Prefer user.name, fallback to user.id
-    setUsernames(usernamesInChannel); // Update the usernames state with all members in the channel
+  
+  const startGame = async () => {
+    if (channel) {
+      console.log("Channel members at game start:", channel.state.members);
+      try {
+        const eventResponse = await channel.sendEvent({
+          type: 'game-started',
+          data: { message: 'Game has started!' },
+        });
+        console.log("Successfully sent the start message:", eventResponse);
+        setGameStarted(true);
+      } catch (e) {
+        console.error("Error:", e.message);
+      }
+    }
   };
 
-    // Real-time updates: listen for when members are added or removed
-    useEffect(() => {
-        if (channel) {
-            const handleMemberAdded = () => updateUsernames(channel);
-            const handleMemberRemoved = () => updateUsernames(channel);
+  const updateUsernames = async (channel) => {
+    const members = Object.values(channel.state.members);
+    const usernamesInChannel = members.map(member => member.user.name || member.user.id);
+    setUsernames(usernamesInChannel);
+  };
 
-            // Listen for member added/removed events
-            channel.on('member.added', handleMemberAdded);
-            channel.on('member.removed', handleMemberRemoved);
-
-            // Cleanup the event listeners when the component unmounts or when channel changes
-            return () => {
-            channel.off('member.added', handleMemberAdded);
-            channel.off('member.removed', handleMemberRemoved);
-            };
-        }
-        }, [channel]); // Re-run this effect when `channel` changes
+  useEffect(() => {
+    if (channel) {
+      const handleMemberAdded = () => updateUsernames(channel);
+      const handleMemberRemoved = () => updateUsernames(channel);
+      const handleGameStarted = (event) => {
+        console.log("Received 'game-started' event:", event.data.message);
+        setGameStarted(true);
+      };
+  
+      channel.on('member.added', handleMemberAdded);
+      channel.on('member.removed', handleMemberRemoved);
+      channel.on('game-started', handleGameStarted);
+  
+      return () => {
+        channel.off('member.added', handleMemberAdded);
+        channel.off('member.removed', handleMemberRemoved);
+        channel.off('game-started', handleGameStarted);
+      };
+    }
+  }, [channel]);
 
   return (
     <>
-      {/* Show the Game component if the game has started */}
       {gameStarted ? (
-        <Game />
+        <>
+          {console.log("Channel being passed to Game:", channel)}
+          <Game channel={channel} initialGameStarted={gameStarted} />
+        </>
       ) : (
         <div className='joinOrCreateGame'>
           {!mode && (
@@ -109,7 +122,6 @@ function JoinOrCreateGame() {
             </>
           )}
 
-          {/* Create Game Mode */}
           {mode === 'create' && !channel && (
             <>
               <h4>Creating Game...</h4>
@@ -117,17 +129,14 @@ function JoinOrCreateGame() {
             </>
           )}
 
-          {/* Show Game ID after creating a game */}
           {mode === 'create' && channel && (
             <>
               <h4>Game Created!</h4>
               <p>Share this Game ID with your friends to join: <strong>{channelId}</strong></p>
-              {/* Add a Start Game button */}
-              <button onClick={() => setGameStarted(true)}>Start Game</button>
+              <button onClick={startGame}>Start Game</button>
             </>
           )}
 
-          {/* Join Game Mode */}
           {mode === 'join' && !channel && (
             <>
               <h4>Join Game</h4>
@@ -140,7 +149,6 @@ function JoinOrCreateGame() {
             </>
           )}
 
-          {/* Display the current usernames in the channel */}
           {channel && (
             <div style={{ marginTop: '20px' }}>
               <h4>Players in the Game</h4>
@@ -156,5 +164,3 @@ function JoinOrCreateGame() {
 }
 
 export default JoinOrCreateGame;
-
-
